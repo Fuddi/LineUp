@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <title>PickPlay</title>
+  <title>LineUp</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -83,7 +83,7 @@
             <path d="M12 2 L9.5 7 L12 12 L14.5 7 Z M2 12 L7 9.5 L12 12 L7 14.5 Z M22 12 L17 9.5 L12 12 L17 14.5 Z M12 22 L9.5 17 L12 12 L14.5 17 Z"/>
           </svg>
         </div>
-        <h1 class="text-xl font-black tracking-tight">Pick<span class="text-amber-500">Play</span></h1>
+        <h1 class="text-xl font-black tracking-tight">Line<span class="text-amber-500">Up</span></h1>
       </div>
       <!-- Roster badge -->
       <span id="headerBadge" class="text-xs font-bold bg-gray-800 text-gray-400 px-3 py-1 rounded-full">0 players</span>
@@ -253,7 +253,7 @@
 
     // ─────────── Boot ───────────
     (function init() {
-      const stored = localStorage.getItem('pp_players');
+      const stored = localStorage.getItem('lu_players');
       players = stored ? JSON.parse(stored) : DEFAULT_PLAYERS.slice();
       if (!stored) save(); // persist defaults immediately
       renderRoster();
@@ -262,7 +262,7 @@
 
     // ─────────── Persistence ───────────
     function save() {
-      localStorage.setItem('pp_players', JSON.stringify(players));
+      localStorage.setItem('lu_players', JSON.stringify(players));
     }
 
     // ─────────── Navigation ───────────
@@ -608,7 +608,7 @@
     }
 
     // ─────────── Utilities ───────────
-    function save()     { localStorage.setItem('pp_players', JSON.stringify(players)); }
+    function save()     { localStorage.setItem('lu_players', JSON.stringify(players)); }
 
     function shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
