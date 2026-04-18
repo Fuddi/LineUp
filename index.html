@@ -312,9 +312,8 @@
     .team-zone-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: var(--space-3) var(--space-4);
+      background: var(--team-color, var(--color-accent));
     }
-    .team-zone-header-a { background: var(--color-success); }
-    .team-zone-header-b { background: var(--color-accent); }
     .team-zone-label {
       font-size: 12px; font-weight: 700;
       letter-spacing: 0.15em; text-transform: uppercase;
@@ -341,8 +340,7 @@
     }
     .player-item:active { cursor: grabbing; }
     .player-item.dragging { opacity: 0.3; transform: scale(0.97); }
-    .pi-accent-a { width: 3px; align-self: stretch; flex-shrink: 0; background: var(--color-success); }
-    .pi-accent-b { width: 3px; align-self: stretch; flex-shrink: 0; background: var(--color-accent); }
+    .pi-accent { width: 3px; align-self: stretch; flex-shrink: 0; background: var(--team-color, var(--color-accent)); }
     .pi-handle { color: var(--color-text-disabled); display: flex; align-items: center; flex-shrink: 0; }
     .pi-num {
       font-family: var(--font-mono); font-size: 11px; font-weight: 700;
@@ -466,6 +464,25 @@
     .toggle input:checked + .toggle-slider { background: var(--color-accent); }
     .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
     .settings-divider { height: 1px; background: var(--color-border); }
+    .stepper { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+    .stepper-btn {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text-primary);
+      font-size: 18px; font-weight: 700; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .stepper-btn:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+    .stepper-btn:active:not(:disabled) { transform: scale(0.92); }
+    .stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .stepper-val {
+      font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+      color: var(--color-text-primary);
+      min-width: 24px; text-align: center;
+    }
     .btn-danger-full {
       width: 100%; height: 44px;
       border-radius: var(--radius-md);
@@ -630,6 +647,20 @@
 
       <div class="settings-divider"></div>
 
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Max per team</div>
+          <div class="setting-sub">E.g. 18 selected &amp; max 6 = 3 teams</div>
+        </div>
+        <div class="stepper" aria-label="Max players per team">
+          <button id="maxPerTeamDec" class="stepper-btn" aria-label="Decrease">−</button>
+          <span id="maxPerTeamValue" class="stepper-val">6</span>
+          <button id="maxPerTeamInc" class="stepper-btn" aria-label="Increase">+</button>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
       <button id="btn-fullscreen" class="btn-secondary" style="width:100%; height:44px; font-size:13px;">
         Fullscreen Mode
       </button>
@@ -650,7 +681,7 @@
   // ─────────── State ───────────
   let players  = [];
   let selected = new Set();
-  let teams    = { a: [], b: [] };
+  let teams    = [];
   let teamsGenerated = false;
 
   // ─────────── Default squad (Lyngby HK U11 drenge) ───────────
@@ -670,13 +701,20 @@
   ];
 
   // ─────────── Settings state ───────────
-  let settings = { darkMode: true };
+  const MAX_PER_TEAM_MIN = 2;
+  const MAX_PER_TEAM_MAX = 15;
+  let settings = { darkMode: true, maxPerTeam: 6 };
 
   function loadSettings() {
     try {
       const raw = localStorage.getItem('lu_settings');
       if (raw) settings = { ...settings, ...JSON.parse(raw) };
     } catch {}
+    // Clamp in case of corrupted/out-of-range value
+    settings.maxPerTeam = Math.max(
+      MAX_PER_TEAM_MIN,
+      Math.min(MAX_PER_TEAM_MAX, settings.maxPerTeam | 0 || 6)
+    );
   }
   function saveSettings() {
     localStorage.setItem('lu_settings', JSON.stringify(settings));
@@ -685,6 +723,14 @@
     document.body.classList.toggle('theme-light', !settings.darkMode);
     const toggle = document.getElementById('toggle-light-mode');
     if (toggle) toggle.checked = !settings.darkMode;
+  }
+  function renderMaxPerTeam() {
+    const el = document.getElementById('maxPerTeamValue');
+    if (el) el.textContent = settings.maxPerTeam;
+    const dec = document.getElementById('maxPerTeamDec');
+    const inc = document.getElementById('maxPerTeamInc');
+    if (dec) dec.disabled = settings.maxPerTeam <= MAX_PER_TEAM_MIN;
+    if (inc) inc.disabled = settings.maxPerTeam >= MAX_PER_TEAM_MAX;
   }
 
   // ─────────── Boot ───────────
@@ -824,61 +870,84 @@
   }
 
   // ─────────── Game Logic ───────────
+  // Palette used to colour each team (header background + accent strip).
+  const TEAM_COLORS = [
+    '#00c853', // green
+    '#00e5ff', // cyan
+    '#ff6d00', // orange
+    '#d500f9', // purple
+    '#ffd600', // yellow
+    '#ff1744', // red
+    '#2979ff', // blue
+    '#00e676', // light green
+  ];
+
+  function splitIntoTeams(pool) {
+    const n = pool.length;
+    const numTeams = Math.max(2, Math.ceil(n / settings.maxPerTeam));
+    const base   = Math.floor(n / numTeams);
+    const extras = n % numTeams;
+    const out = [];
+    let cursor = 0;
+    for (let i = 0; i < numTeams; i++) {
+      const size = base + (i < extras ? 1 : 0);
+      out.push(pool.slice(cursor, cursor + size));
+      cursor += size;
+    }
+    return out;
+  }
+
   function doStartGame() {
     if (selected.size < 2) return;
-    const pool = shuffle([...selected]);
-    const half = Math.ceil(pool.length / 2);
-    teams = { a: pool.slice(0, half), b: pool.slice(half) };
+    teams = splitIntoTeams(shuffle([...selected]));
     teamsGenerated = true;
     renderTeams(true);
     goTo('teams');
   }
 
   function doReshuffle() {
-    const pool = shuffle([...teams.a, ...teams.b]);
-    const half = Math.ceil(pool.length / 2);
-    teams = { a: pool.slice(0, half), b: pool.slice(half) };
+    const all = teams.flat();
+    teams = splitIntoTeams(shuffle(all));
     renderTeams(true);
   }
 
+  function teamColor(idx) {
+    return TEAM_COLORS[idx % TEAM_COLORS.length];
+  }
+  function teamLabel(idx) {
+    return 'Team ' + String.fromCharCode(65 + idx); // A, B, C, ...
+  }
+
   function renderTeams(animate) {
-    const total = teams.a.length + teams.b.length;
+    const total = teams.reduce((s, t) => s + t.length, 0);
 
     document.getElementById('teamsEmpty').style.display   = 'none';
     document.getElementById('teamsHeader').style.display  = 'block';
     document.getElementById('teamsActions').style.display = 'flex';
     document.getElementById('teamsInfo').textContent =
-      `${total} players · ${teams.a.length} vs ${teams.b.length}`;
+      `${total} players · ${teams.map(t => t.length).join(' vs ')}`;
 
-    document.getElementById('teamsGrid').innerHTML = `
-      <div id="zone-a" data-zone="a" class="team-zone${animate ? ' anim-a' : ''}">
-        <div class="team-zone-header team-zone-header-a">
-          <span class="team-zone-label">Team A</span>
-          <span class="team-zone-count">${teams.a.length}</span>
+    document.getElementById('teamsGrid').innerHTML = teams.map((list, zi) => {
+      const color = teamColor(zi);
+      return `
+      <div id="zone-${zi}" data-zone="${zi}" class="team-zone${animate ? (zi % 2 === 0 ? ' anim-a' : ' anim-b') : ''}" style="--team-color:${color};">
+        <div class="team-zone-header">
+          <span class="team-zone-label">${teamLabel(zi)}</span>
+          <span class="team-zone-count">${list.length}</span>
         </div>
-        <ul id="list-a" class="team-zone-list">
-          ${teams.a.map((n, i) => playerItem(n, i, 'a')).join('')}
+        <ul id="list-${zi}" class="team-zone-list">
+          ${list.map((n, i) => playerItem(n, i, zi)).join('')}
         </ul>
-      </div>
-
-      <div id="zone-b" data-zone="b" class="team-zone${animate ? ' anim-b' : ''}">
-        <div class="team-zone-header team-zone-header-b">
-          <span class="team-zone-label">Team B</span>
-          <span class="team-zone-count">${teams.b.length}</span>
-        </div>
-        <ul id="list-b" class="team-zone-list">
-          ${teams.b.map((n, i) => playerItem(n, i, 'b')).join('')}
-        </ul>
-      </div>
-    `;
+      </div>`;
+    }).join('');
 
     bindDragListeners();
   }
 
-  function playerItem(name, i, team) {
+  function playerItem(name, i, teamIdx) {
     return `
-      <li class="player-item" data-name="${esc(name)}" data-team="${team}" draggable="true">
-        <div class="pi-accent-${team}"></div>
+      <li class="player-item" data-name="${esc(name)}" data-team="${teamIdx}" draggable="true" style="--team-color:${teamColor(teamIdx)};">
+        <div class="pi-accent"></div>
         <span class="pi-handle">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <circle cx="5" cy="4" r="1.4"/><circle cx="11" cy="4" r="1.4"/>
@@ -900,8 +969,8 @@
       el.addEventListener('dragstart', onDragStart);
       el.addEventListener('dragend',   onDragEnd);
     });
-    ['a','b'].forEach(zone => {
-      const z = document.getElementById(`zone-${zone}`);
+    document.querySelectorAll('[data-zone]').forEach(z => {
+      const zone = z.dataset.zone;
       z.addEventListener('dragover',  e => onDragOver(e, zone));
       z.addEventListener('dragleave', e => onDragLeave(e, zone));
       z.addEventListener('drop',      e => onDrop(e, zone));
@@ -990,13 +1059,14 @@
   }
 
   function movePlayer(name, fromTeam, toTeam) {
-    teams[fromTeam] = teams[fromTeam].filter(n => n !== name);
-    teams[toTeam].push(name);
+    const fi = +fromTeam, ti = +toTeam;
+    if (!teams[fi] || !teams[ti] || fi === ti) return;
+    teams[fi] = teams[fi].filter(n => n !== name);
+    teams[ti].push(name);
     renderTeams(false);
   }
   function clearHighlights() {
-    document.getElementById('zone-a')?.classList.remove('drag-over');
-    document.getElementById('zone-b')?.classList.remove('drag-over');
+    document.querySelectorAll('[data-zone].drag-over').forEach(z => z.classList.remove('drag-over'));
   }
 
   // ─────────── Utilities ───────────
@@ -1054,6 +1124,23 @@
       applyTheme();
     });
 
+    // Max-per-team stepper
+    function bumpMaxPerTeam(delta) {
+      const next = Math.max(MAX_PER_TEAM_MIN, Math.min(MAX_PER_TEAM_MAX, settings.maxPerTeam + delta));
+      if (next === settings.maxPerTeam) return;
+      settings.maxPerTeam = next;
+      saveSettings();
+      renderMaxPerTeam();
+      // If teams are already on screen, re-split live so user sees the effect
+      if (teamsGenerated && teams.length) {
+        teams = splitIntoTeams(teams.flat());
+        renderTeams(false);
+      }
+    }
+    document.getElementById('maxPerTeamDec').addEventListener('click', () => bumpMaxPerTeam(-1));
+    document.getElementById('maxPerTeamInc').addEventListener('click', () => bumpMaxPerTeam(+1));
+    renderMaxPerTeam();
+
     // Fullscreen
     document.getElementById('btn-fullscreen').addEventListener('click', () => {
       if (!document.fullscreenElement) {
@@ -1069,7 +1156,7 @@
       if (!confirm('Clear all players and reset? This cannot be undone.')) return;
       players = [];
       selected.clear();
-      teams = { a: [], b: [] };
+      teams = [];
       teamsGenerated = false;
       save();
       renderRoster();
