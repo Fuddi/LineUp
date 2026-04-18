@@ -20,6 +20,7 @@
       --color-text-primary:  #f0f4ff;
       --color-text-secondary:#8899bb;
       --color-text-disabled: #445577;
+      --color-on-accent:     #0d0f14;
 
       --space-1:  4px;
       --space-2:  8px;
@@ -37,6 +38,20 @@
       --font-sans: 'Inter', system-ui, sans-serif;
     }
 
+    .theme-light {
+      --color-bg:           #eef1f6;
+      --color-surface:      #f8fafc;
+      --color-surface-alt:  #e4e9f2;
+      --color-border:       #bec9de;
+      --color-accent:       #0070c4;
+      --color-success:      #00882a;
+      --color-danger:       #cc2e00;
+      --color-text-primary: #0e1724;
+      --color-text-secondary:#48587a;
+      --color-text-disabled: #8fa0bb;
+      --color-on-accent:    #ffffff;
+    }
+
     /* ── Reset ─────────────────────────────────────────────── */
     *, *::before, *::after {
       box-sizing: border-box; margin: 0; padding: 0;
@@ -47,10 +62,10 @@
       font-family: var(--font-sans);
       background: var(--color-bg);
       color: var(--color-text-primary);
-      min-height: 100dvh;
+      height: 100dvh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
     }
     button { font-family: inherit; cursor: pointer; border: none; background: none; touch-action: manipulation; }
     input  { font-family: inherit; }
@@ -61,7 +76,7 @@
     #app {
       display: flex;
       flex-direction: column;
-      min-height: 100dvh;
+      height: 100dvh;
       max-width: 500px;
       margin: 0 auto;
       width: 100%;
@@ -72,18 +87,19 @@
       position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 var(--space-4);
-      height: 60px;
+      height: 44px;
       background: var(--color-bg);
       border-bottom: 1px solid var(--color-border);
     }
     #header-logo { display: flex; align-items: center; gap: var(--space-2); }
     #header-logo svg { color: var(--color-accent); }
     #header-title {
-      font-size: 18px; font-weight: 700;
+      font-size: 15px; font-weight: 700;
       letter-spacing: 0.04em; text-transform: uppercase;
       color: var(--color-text-primary);
     }
     #header-title span { color: var(--color-accent); }
+    #header-right { display: flex; align-items: center; gap: var(--space-2); }
     #headerBadge {
       font-family: var(--font-mono);
       font-size: 11px; font-weight: 700;
@@ -92,17 +108,28 @@
       padding: 2px 10px;
       color: var(--color-text-secondary);
     }
+    #btn-settings {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-full);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-secondary);
+      transition: background 0.2s, color 0.2s;
+    }
+    #btn-settings:hover, #btn-settings:active {
+      background: var(--color-surface-alt);
+      color: var(--color-accent);
+    }
 
     /* ── Tab Nav ───────────────────────────────────────────── */
     #tab-nav {
-      position: sticky; top: 60px; z-index: 90;
+      position: sticky; top: 44px; z-index: 90;
       background: var(--color-bg);
       border-bottom: 1px solid var(--color-border);
       display: flex;
     }
     .tab-btn {
       flex: 1;
-      padding: var(--space-3) var(--space-4);
+      padding: 9px var(--space-4);
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.12em; text-transform: uppercase;
       color: var(--color-text-secondary);
@@ -113,21 +140,21 @@
     .tab-btn:hover:not(.active) { color: var(--color-text-primary); }
 
     /* ── Main scroll ───────────────────────────────────────── */
-    #main-scroll { flex: 1; overflow-y: auto; }
+    #main-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; }
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
 
     /* ── Views ─────────────────────────────────────────────── */
-    .view { display: none; padding: var(--space-4); }
+    .view { display: none; padding: 12px; }
     .view.active { display: block; }
 
     /* ── Typography ────────────────────────────────────────── */
-    .section-title { font-size: 18px; font-weight: 700; color: var(--color-text-primary); }
-    .section-sub   { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
+    .section-title { font-size: 15px; font-weight: 700; color: var(--color-text-primary); }
+    .section-sub   { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
 
     /* ── Stack / Row helpers ───────────────────────────────── */
-    .stack { display: flex; flex-direction: column; gap: var(--space-3); }
+    .stack { display: flex; flex-direction: column; gap: var(--space-2); }
     .row   { display: flex; align-items: center; gap: var(--space-2); }
     .row-between { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 
@@ -152,7 +179,7 @@
       border-radius: var(--radius-full);
       font-size: 13px; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
-      background: var(--color-accent); color: #0d0f14;
+      background: var(--color-accent); color: var(--color-on-accent);
       transition: opacity 0.2s, transform 0.1s;
       flex-shrink: 0;
     }
@@ -233,15 +260,15 @@
     #selectGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--space-3);
+      gap: var(--space-2);
     }
     @media (min-width: 400px) { #selectGrid { grid-template-columns: 1fr 1fr 1fr; } }
 
     .select-btn {
       position: relative;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: var(--space-2); padding: var(--space-4) var(--space-2);
-      min-height: 96px;
+      gap: 6px; padding: 10px var(--space-2);
+      min-height: 72px;
       border-radius: var(--radius-md);
       border: 1px solid var(--color-border);
       background: var(--color-surface);
@@ -253,15 +280,15 @@
     .select-btn:hover:not(.selected) { border-color: var(--color-text-secondary); color: var(--color-text-primary); }
     .select-btn.selected { border-color: var(--color-accent); background: rgba(0,229,255,0.07); color: var(--color-text-primary); }
     .sel-initials {
-      width: 40px; height: 40px;
+      width: 32px; height: 32px;
       border-radius: var(--radius-full);
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
       background: var(--color-surface-alt); color: var(--color-text-secondary);
       transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .select-btn.selected .sel-initials { background: var(--color-accent); color: #0d0f14; }
+    .select-btn.selected .sel-initials { background: var(--color-accent); color: var(--color-on-accent); }
     .sel-name { font-size: 12px; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
     .sel-check { position: absolute; top: 6px; right: 8px; font-size: 10px; font-weight: 900; color: var(--color-accent); }
 
@@ -288,7 +315,7 @@
     .team-zone-count {
       font-family: var(--font-mono); font-size: 12px; font-weight: 700;
       color: rgba(13,15,20,0.65);
-      background: rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.25);
       border-radius: var(--radius-full); padding: 2px 10px;
     }
     .team-zone-list { list-style: none; padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); min-height: 56px; }
@@ -333,17 +360,17 @@
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
       background: var(--color-bg);
       border-top: 1px solid var(--color-border);
-      padding: var(--space-3) var(--space-4);
-      padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+      padding: var(--space-2) var(--space-4);
+      padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
     }
     #startBar.visible { display: block; }
     #startBar-inner { max-width: 500px; margin: 0 auto; }
     #startBtn {
-      width: 100%; height: 52px;
+      width: 100%; height: 44px;
       border-radius: var(--radius-full);
       font-size: 14px; font-weight: 700;
       letter-spacing: 0.1em; text-transform: uppercase;
-      background: var(--color-accent); color: #0d0f14;
+      background: var(--color-accent); color: var(--color-on-accent);
       transition: opacity 0.2s, transform 0.1s;
     }
     #startBtn:active { transform: scale(0.98); }
@@ -358,6 +385,90 @@
     }
     .empty-state strong { color: var(--color-text-secondary); font-size: 15px; display: block; }
     .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    /* ── Settings Drawer ───────────────────────────────────── */
+    #settings-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      backdrop-filter: blur(2px);
+    }
+    #settings-overlay.open { display: block; }
+    #settings-drawer {
+      position: fixed; top: 0; right: -320px;
+      width: 300px; max-width: 85vw; height: 100dvh;
+      background: var(--color-surface);
+      border-left: 1px solid var(--color-border);
+      z-index: 201;
+      display: flex; flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+    }
+    #settings-drawer.open { right: 0; }
+    #settings-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky; top: 0;
+      background: var(--color-surface);
+    }
+    #settings-header h2 {
+      font-size: 15px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--color-text-primary);
+    }
+    #btn-close-settings {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-full);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-secondary);
+      transition: background 0.2s, color 0.2s;
+    }
+    #btn-close-settings:hover { background: var(--color-surface-alt); color: var(--color-text-primary); }
+    #settings-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-3);
+    }
+    .setting-label { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+    .setting-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+    .toggle {
+      position: relative;
+      width: 48px; height: 28px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--color-border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      left: 3px; top: 3px;
+      width: 22px; height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.25s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--color-accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .settings-divider { height: 1px; background: var(--color-border); }
+    .btn-danger-full {
+      width: 100%; height: 44px;
+      border-radius: var(--radius-md);
+      background: rgba(255,61,0,0.1);
+      border: 2px solid var(--color-danger);
+      color: var(--color-danger);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-danger-full:active { background: rgba(255,61,0,0.2); transform: scale(0.98); }
 
     /* ── Animations ────────────────────────────────────────── */
     @keyframes slideUp {
@@ -388,7 +499,15 @@
       </svg>
       <span id="header-title">Line<span>Up</span></span>
     </div>
-    <span id="headerBadge">0 players</span>
+    <div id="header-right">
+      <span id="headerBadge">0 players</span>
+      <button id="btn-settings" aria-label="Open settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- ═══════════ TAB NAV ═══════════ -->
@@ -404,11 +523,6 @@
     <!-- ─── ROSTER ─── -->
     <div id="view-roster" class="view active" style="padding-bottom: var(--space-8);">
       <div class="stack">
-
-        <div>
-          <div class="section-title">Player Roster</div>
-          <div class="section-sub">Your squad — saved automatically for next time.</div>
-        </div>
 
         <form id="addForm" class="row">
           <input id="nameInput" type="text" class="text-input"
@@ -427,15 +541,12 @@
     </div>
 
     <!-- ─── TODAY / SELECT ─── -->
-    <div id="view-select" class="view" style="padding-bottom: 88px;">
+    <div id="view-select" class="view" style="padding-bottom: 68px;">
       <div class="stack">
 
-        <div class="row-between">
-          <div>
-            <div class="section-title">Who's Here Today?</div>
-            <div id="selectInfo" class="section-sub">Tap to mark players present</div>
-          </div>
-          <div class="row" style="flex-shrink:0; padding-top: 2px;">
+        <div class="row-between" style="align-items:center;">
+          <span id="selectInfo" class="section-sub" style="margin:0;"></span>
+          <div class="row" style="flex-shrink:0;">
             <button class="btn-small accent" onclick="doSelectAll()">All</button>
             <button class="btn-small"        onclick="doClearAll()">Clear</button>
           </div>
@@ -456,16 +567,15 @@
     <div id="view-teams" class="view" style="padding-bottom: var(--space-8);">
       <div class="stack">
 
-        <div id="teamsHeader" style="display:none; text-align:center; padding-top: var(--space-2);">
-          <div class="section-title">Teams Ready!</div>
+        <div id="teamsHeader" style="display:none;">
           <div id="teamsInfo" class="section-sub"></div>
         </div>
 
         <div id="teamsGrid" class="stack"></div>
 
         <div id="teamsActions" class="stack" style="display:none;">
-          <button class="btn-secondary" style="width:100%; height:52px;" onclick="doReshuffle()">Reshuffle Teams</button>
-          <button class="btn-secondary accent" style="width:100%; height:52px;" onclick="goTo('select')">← Change Players</button>
+          <button class="btn-secondary" style="width:100%; height:44px;" onclick="doReshuffle()">Reshuffle Teams</button>
+          <button class="btn-secondary accent" style="width:100%; height:44px;" onclick="goTo('select')">← Change Players</button>
         </div>
 
         <div id="teamsEmpty" class="empty-state">
@@ -483,6 +593,45 @@
   <div id="startBar">
     <div id="startBar-inner">
       <button id="startBtn" disabled onclick="doStartGame()">Start Game</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SETTINGS DRAWER ═══════════ -->
+  <div id="settings-overlay" role="dialog" aria-modal="true" aria-label="Settings"></div>
+  <div id="settings-drawer">
+    <div id="settings-header">
+      <h2>Settings</h2>
+      <button id="btn-close-settings" aria-label="Close settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div id="settings-body">
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Light Mode</div>
+          <div class="setting-sub">Switch to light theme</div>
+        </div>
+        <label class="toggle" aria-label="Toggle light mode">
+          <input type="checkbox" id="toggle-light-mode" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <button id="btn-fullscreen" class="btn-secondary" style="width:100%; height:44px; font-size:13px;">
+        Fullscreen Mode
+      </button>
+
+      <div class="settings-divider"></div>
+
+      <button id="btn-reset-session" class="btn-danger-full">
+        Clear All &amp; Reset
+      </button>
+
     </div>
   </div>
 
@@ -512,13 +661,34 @@
     "Viktor Bjørk Thorgrimsen","Walther Hodal","Witek Wojcik"
   ];
 
+  // ─────────── Settings state ───────────
+  let settings = { darkMode: true };
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem('lu_settings');
+      if (raw) settings = { ...settings, ...JSON.parse(raw) };
+    } catch {}
+  }
+  function saveSettings() {
+    localStorage.setItem('lu_settings', JSON.stringify(settings));
+  }
+  function applyTheme() {
+    document.body.classList.toggle('theme-light', !settings.darkMode);
+    const toggle = document.getElementById('toggle-light-mode');
+    if (toggle) toggle.checked = !settings.darkMode;
+  }
+
   // ─────────── Boot ───────────
   (function init() {
+    loadSettings();
+    applyTheme();
     const stored = localStorage.getItem('lu_players');
     players = stored ? JSON.parse(stored) : DEFAULT_PLAYERS.slice();
     if (!stored) save();
     renderRoster();
     renderSelect();
+    if (players.length > 0) goTo('select');
   })();
 
   // ─────────── Persistence ───────────
@@ -845,6 +1015,64 @@
     input.select();
     setTimeout(() => input.classList.remove('error'), 1800);
   }
+
+  // ─────────── Settings drawer ───────────
+  (function wireSettings() {
+    const overlay = document.getElementById('settings-overlay');
+    const drawer  = document.getElementById('settings-drawer');
+    const btnOpen = document.getElementById('btn-settings');
+    const btnClose = document.getElementById('btn-close-settings');
+
+    function open()  {
+      overlay.classList.add('open');
+      drawer.classList.add('open');
+      btnClose.focus();
+    }
+    function close() {
+      overlay.classList.remove('open');
+      drawer.classList.remove('open');
+      btnOpen.focus();
+    }
+
+    btnOpen.addEventListener('click', open);
+    btnClose.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+    // Light-mode toggle
+    document.getElementById('toggle-light-mode').addEventListener('change', () => {
+      settings.darkMode = !settings.darkMode;
+      saveSettings();
+      applyTheme();
+    });
+
+    // Fullscreen
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+      close();
+    });
+
+    // Clear All & Reset
+    document.getElementById('btn-reset-session').addEventListener('click', () => {
+      if (!confirm('Clear all players and reset? This cannot be undone.')) return;
+      players = [];
+      selected.clear();
+      teams = { a: [], b: [] };
+      teamsGenerated = false;
+      save();
+      renderRoster();
+      renderSelect();
+      goTo('roster');
+      close();
+    });
+
+    // Sync the toggle after the DOM has this element
+    applyTheme();
+  })();
 </script>
 </body>
 </html>
