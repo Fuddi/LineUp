@@ -379,13 +379,25 @@
       display: flex; align-items: center; gap: var(--space-3);
       padding: var(--space-2) var(--space-3) var(--space-2) 0;
       overflow: hidden;
-      cursor: grab; touch-action: none; user-select: none;
+      user-select: none;
+      /* Let the browser scroll the page when touching the row — only the
+         handle intercepts touch for drag. Desktop mouse drag still works via
+         the draggable="true" attribute on the whole row. */
+      touch-action: pan-y;
       transition: opacity 0.15s, transform 0.15s;
     }
-    .player-item:active { cursor: grabbing; }
     .player-item.dragging { opacity: 0.3; transform: scale(0.97); }
     .pi-accent { width: 3px; align-self: stretch; flex-shrink: 0; background: var(--team-color, var(--color-accent)); }
-    .pi-handle { color: var(--color-text-disabled); display: flex; align-items: center; flex-shrink: 0; }
+    .pi-handle {
+      color: var(--color-text-disabled);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      width: 32px; align-self: stretch;
+      cursor: grab;
+      touch-action: none;   /* the handle captures touch to initiate drag */
+    }
+    .pi-handle:hover, .pi-handle:active { color: var(--color-text-secondary); }
+    .pi-handle:active { cursor: grabbing; }
     .pi-num {
       font-family: var(--font-mono); font-size: 11px; font-weight: 700;
       color: var(--color-text-secondary);
@@ -1082,6 +1094,7 @@
   let dnd = { name: null, from: null, ghost: null, sourceEl: null };
 
   function bindDragListeners() {
+    // Desktop HTML5 drag from anywhere on the row
     document.querySelectorAll('.player-item').forEach(el => {
       el.addEventListener('dragstart', onDragStart);
       el.addEventListener('dragend',   onDragEnd);
@@ -1092,7 +1105,9 @@
       z.addEventListener('dragleave', e => onDragLeave(e, zone));
       z.addEventListener('drop',      e => onDrop(e, zone));
     });
-    document.querySelectorAll('.player-item').forEach(el => {
+    // Touch drag only fires from the drag handle — the rest of the row is
+    // free to pass scrolls through to the page.
+    document.querySelectorAll('.pi-handle').forEach(el => {
       el.addEventListener('touchstart', onTouchStart, { passive: false });
       el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd);
@@ -1129,7 +1144,8 @@
 
   /* Touch */
   function onTouchStart(e) {
-    const li   = e.currentTarget;
+    const li = e.currentTarget.closest('.player-item');
+    if (!li) return;
     const rect = li.getBoundingClientRect();
     const t    = e.touches[0];
     dnd.name     = li.dataset.name;
