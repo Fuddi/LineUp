@@ -948,48 +948,32 @@
   }
 
   // ─────────── Game Logic ───────────
-  // Palette used to colour each team (header background + accent strip).
-  const TEAM_COLORS = [
-    '#00c853', // green
-    '#00e5ff', // cyan
-    '#ff6d00', // orange
-    '#d500f9', // purple
-    '#ffd600', // yellow
-    '#ff1744', // red
-    '#2979ff', // blue
-    '#00e676', // light green
-  ];
+  // Each level gets its own colour; every team made from that level wears it.
+  const LEVEL_COLORS = { A: '#ffb300', B: '#00e5ff', C: '#c066ff' };
 
-  // Split `pool` (array of {name, level}) into N teams such that each team
-  // has a balanced share of each skill level AND a balanced overall size.
-  // Algorithm: for each level in A→B→C, shuffle and place each player in
-  // whichever team currently has the fewest players of that level (ties
-  // broken by overall team size, then team index).
+  // Split `pool` (array of {name, level}) into teams **grouped strictly by
+  // level**. Within each level we split evenly into ceil(count / maxPerTeam)
+  // sub-teams so you get e.g. A-team 1 vs A-team 2, B-team 1 vs B-team 2, …
   function splitIntoTeams(pool) {
-    const n = pool.length;
-    const numTeams = Math.max(2, Math.ceil(n / settings.maxPerTeam));
-    const teams = Array.from({ length: numTeams }, () => []);
-
     const byLevel = { A: [], B: [], C: [] };
     for (const p of pool) (byLevel[p.level] || byLevel.B).push(p);
     for (const lvl of ['A', 'B', 'C']) shuffle(byLevel[lvl]);
 
+    const out = [];
     for (const level of ['A', 'B', 'C']) {
-      for (const p of byLevel[level]) {
-        let best = 0;
-        let bestLvl = teams[0].filter(x => x.level === level).length;
-        let bestSize = teams[0].length;
-        for (let i = 1; i < numTeams; i++) {
-          const lc = teams[i].filter(x => x.level === level).length;
-          const sz = teams[i].length;
-          if (lc < bestLvl || (lc === bestLvl && sz < bestSize)) {
-            best = i; bestLvl = lc; bestSize = sz;
-          }
-        }
-        teams[best].push(p);
+      const group = byLevel[level];
+      if (!group.length) continue;
+      const numSubTeams = Math.max(1, Math.ceil(group.length / settings.maxPerTeam));
+      const base = Math.floor(group.length / numSubTeams);
+      const extras = group.length % numSubTeams;
+      let cursor = 0;
+      for (let i = 0; i < numSubTeams; i++) {
+        const size = base + (i < extras ? 1 : 0);
+        out.push(group.slice(cursor, cursor + size));
+        cursor += size;
       }
     }
-    return teams;
+    return out;
   }
 
   function doStartGame() {
@@ -1007,39 +991,64 @@
     renderTeams(true);
   }
 
+  // A team's colour comes from its dominant level. Mixed teams (after manual
+  // drag) fall back to the first player's level or a neutral accent.
+  function teamDominantLevel(idx) {
+    const t = teams[idx];
+    if (!t || !t.length) return null;
+    const count = {};
+    for (const p of t) count[p.level] = (count[p.level] || 0) + 1;
+    return Object.keys(count).sort((a, b) => count[b] - count[a])[0];
+  }
   function teamColor(idx) {
-    return TEAM_COLORS[idx % TEAM_COLORS.length];
+    const lvl = teamDominantLevel(idx);
+    return LEVEL_COLORS[lvl] || '#00e5ff';
   }
   function teamLabel(idx) {
-    return 'Team ' + String.fromCharCode(65 + idx); // A, B, C, ...
+    const t = teams[idx];
+    if (!t || !t.length) return 'Team';
+    const lvl = teamDominantLevel(idx);
+    // How many teams (including this one) share this dominant level?
+    let sameLevelCount = 0, myIndexInLevel = 0;
+    for (let i = 0; i < teams.length; i++) {
+      if (teamDominantLevel(i) === lvl) {
+        if (i === idx) myIndexInLevel = sameLevelCount;
+        sameLevelCount++;
+      }
+    }
+    return sameLevelCount > 1
+      ? `Team ${lvl}${myIndexInLevel + 1}`
+      : `Team ${lvl}`;
   }
 
-  function levelBreakdown(list) {
-    const c = { A: 0, B: 0, C: 0 };
-    for (const p of list) c[p.level] = (c[p.level] || 0) + 1;
+  // "A: 3 vs 3 · B: 3 vs 3 · C: 6"  — matchups grouped by level
+  function teamsInfoLine() {
+    const total = teams.reduce((s, t) => s + t.length, 0);
+    const sizesByLevel = { A: [], B: [], C: [] };
+    for (let i = 0; i < teams.length; i++) {
+      const lvl = teamDominantLevel(i);
+      if (lvl) (sizesByLevel[lvl] = sizesByLevel[lvl] || []).push(teams[i].length);
+    }
     const parts = [];
-    if (c.A) parts.push(c.A + 'A');
-    if (c.B) parts.push(c.B + 'B');
-    if (c.C) parts.push(c.C + 'C');
-    return parts.join(' · ');
+    for (const lvl of ['A', 'B', 'C']) {
+      const arr = sizesByLevel[lvl];
+      if (arr && arr.length) parts.push(`${lvl}: ${arr.join(' vs ')}`);
+    }
+    return `${total} players · ${parts.join(' · ')}`;
   }
 
   function renderTeams(animate) {
-    const total = teams.reduce((s, t) => s + t.length, 0);
-
     document.getElementById('teamsEmpty').style.display   = 'none';
     document.getElementById('teamsHeader').style.display  = 'block';
     document.getElementById('teamsActions').style.display = 'flex';
-    document.getElementById('teamsInfo').textContent =
-      `${total} players · ${teams.map(t => t.length).join(' vs ')}`;
+    document.getElementById('teamsInfo').textContent = teamsInfoLine();
 
     document.getElementById('teamsGrid').innerHTML = teams.map((list, zi) => {
       const color = teamColor(zi);
-      const bd = levelBreakdown(list);
       return `
       <div id="zone-${zi}" data-zone="${zi}" class="team-zone${animate ? (zi % 2 === 0 ? ' anim-a' : ' anim-b') : ''}" style="--team-color:${color};">
         <div class="team-zone-header">
-          <span class="team-zone-label">${teamLabel(zi)}${bd ? ` · ${bd}` : ''}</span>
+          <span class="team-zone-label">${teamLabel(zi)}</span>
           <span class="team-zone-count">${list.length}</span>
         </div>
         <ul id="list-${zi}" class="team-zone-list">
