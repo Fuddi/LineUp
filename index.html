@@ -264,6 +264,50 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
+    /* ── Level segment control (Roster) ────────────────────── */
+    .player-level {
+      display: flex; gap: 2px; flex-shrink: 0;
+      background: var(--color-surface-alt);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      border: 1px solid var(--color-border);
+    }
+    .level-seg {
+      width: 22px; height: 22px;
+      border-radius: 4px;
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      color: var(--color-text-secondary);
+      background: transparent;
+      transition: color .15s, background .15s;
+    }
+    .level-seg:hover:not(.active) { color: var(--color-text-primary); }
+    .level-seg.active { color: var(--color-on-accent); }
+    .level-seg.active.lv-A { background: #ffb300; }
+    .level-seg.active.lv-B { background: #00e5ff; }
+    .level-seg.active.lv-C { background: #c066ff; }
+
+    /* ── Level badge (Teams + Today) ───────────────────────── */
+    .lv-badge {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      border-radius: 4px;
+      padding: 2px 5px; min-width: 18px; text-align: center;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+    }
+    .lv-badge.lv-A { color: #ffb300; background: rgba(255,179,0,0.12); border-color: rgba(255,179,0,0.35); }
+    .lv-badge.lv-B { color: #00e5ff; background: rgba(0,229,255,0.10); border-color: rgba(0,229,255,0.30); }
+    .lv-badge.lv-C { color: #c066ff; background: rgba(192,102,255,0.12); border-color: rgba(192,102,255,0.35); }
+
+    /* Corner level mark for select-btn */
+    .sel-level {
+      position: absolute; top: 6px; left: 8px;
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .sel-level.lv-A { color: #ffb300; }
+    .sel-level.lv-B { color: #00e5ff; }
+    .sel-level.lv-C { color: #c066ff; }
+
     /* ── Select grid ───────────────────────────────────────── */
     #selectGrid {
       display: grid;
@@ -738,12 +782,27 @@
     loadSettings();
     applyTheme();
     const stored = localStorage.getItem('lu_players');
-    players = stored ? JSON.parse(stored) : DEFAULT_PLAYERS.slice();
-    if (!stored) save();
+    const raw = stored ? JSON.parse(stored) : DEFAULT_PLAYERS.slice();
+    const { list, migrated } = migratePlayers(raw);
+    players = list;
+    if (!stored || migrated) save();
     renderRoster();
     renderSelect();
     if (players.length > 0) goTo('select');
   })();
+
+  // Convert legacy string entries to {name, level} objects. Default level: 'B'.
+  function migratePlayers(raw) {
+    let migrated = false;
+    const list = raw.map(entry => {
+      if (typeof entry === 'string') { migrated = true; return { name: entry, level: 'B' }; }
+      if (!entry || typeof entry !== 'object') { migrated = true; return { name: String(entry), level: 'B' }; }
+      const level = ['A','B','C'].includes(entry.level) ? entry.level : 'B';
+      if (level !== entry.level) migrated = true;
+      return { name: String(entry.name ?? ''), level };
+    }).filter(p => p.name);
+    return { list, migrated };
+  }
 
   // ─────────── Persistence ───────────
   function save() {
@@ -774,12 +833,19 @@
     }
     empty.style.display = 'none';
 
-    list.innerHTML = players.map((name, i) => `
+    list.innerHTML = players.map((p, i) => `
       <div class="player-card">
         <div class="player-card-accent"></div>
-        <span class="player-bib">${initials(name)}</span>
-        <span class="player-name">${esc(name)}</span>
-        <button onclick="removePlayer(${i})" class="btn-icon danger" aria-label="Remove ${esc(name)}" style="margin-right: 4px;">
+        <span class="player-bib">${initials(p.name)}</span>
+        <span class="player-name">${esc(p.name)}</span>
+        <div class="player-level" role="radiogroup" aria-label="Level for ${esc(p.name)}">
+          ${['A','B','C'].map(lv => `
+            <button type="button" class="level-seg lv-${lv}${p.level === lv ? ' active' : ''}"
+              role="radio" aria-checked="${p.level === lv}" aria-label="Level ${lv}"
+              onclick="setLevel(${i}, '${lv}')">${lv}</button>
+          `).join('')}
+        </div>
+        <button onclick="removePlayer(${i})" class="btn-icon danger" aria-label="Remove ${esc(p.name)}" style="margin-right: 4px;">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -789,18 +855,28 @@
     `).join('');
   }
 
+  function setLevel(i, level) {
+    if (!players[i] || !['A','B','C'].includes(level)) return;
+    if (players[i].level === level) return;
+    players[i].level = level;
+    save();
+    renderRoster();
+    // Also refresh Today grid so the corner level badge updates
+    if (document.getElementById('view-select').classList.contains('active')) renderSelect();
+  }
+
   document.getElementById('addForm').addEventListener('submit', e => {
     e.preventDefault();
     const input = document.getElementById('nameInput');
     const name  = input.value.trim();
     if (!name) return;
 
-    if (players.some(p => p.toLowerCase() === name.toLowerCase())) {
+    if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
       flashError(input);
       return;
     }
 
-    players.push(name);
+    players.push({ name, level: 'B' });
     save();
     renderRoster();
     input.value = '';
@@ -808,9 +884,10 @@
   });
 
   function removePlayer(i) {
-    const name = players[i];
+    const p = players[i];
+    if (!p) return;
     players.splice(i, 1);
-    selected.delete(name);
+    selected.delete(p.name);
     save();
     renderRoster();
     updateStartBtn();
@@ -830,13 +907,14 @@
     grid.style.display = '';
     empty.style.display = 'none';
 
-    grid.innerHTML = players.map(name => {
-      const on = selected.has(name);
+    grid.innerHTML = players.map(p => {
+      const on = selected.has(p.name);
       return `
-        <button data-name="${esc(name)}" onclick="togglePlayer(this.dataset.name)"
+        <button data-name="${esc(p.name)}" onclick="togglePlayer(this.dataset.name)"
           class="select-btn${on ? ' selected' : ''}">
-          <span class="sel-initials">${initials(name)}</span>
-          <span class="sel-name">${esc(name)}</span>
+          <span class="sel-level lv-${p.level}">${p.level}</span>
+          <span class="sel-initials">${initials(p.name)}</span>
+          <span class="sel-name">${esc(p.name)}</span>
           ${on ? '<span class="sel-check">✓</span>' : ''}
         </button>
       `;
@@ -850,7 +928,7 @@
     renderSelect();
   }
 
-  function doSelectAll() { players.forEach(p => selected.add(p)); renderSelect(); }
+  function doSelectAll() { players.forEach(p => selected.add(p.name)); renderSelect(); }
   function doClearAll()  { selected.clear(); renderSelect(); }
 
   function updateStartBtn() {
@@ -882,24 +960,42 @@
     '#00e676', // light green
   ];
 
+  // Split `pool` (array of {name, level}) into N teams such that each team
+  // has a balanced share of each skill level AND a balanced overall size.
+  // Algorithm: for each level in A→B→C, shuffle and place each player in
+  // whichever team currently has the fewest players of that level (ties
+  // broken by overall team size, then team index).
   function splitIntoTeams(pool) {
     const n = pool.length;
     const numTeams = Math.max(2, Math.ceil(n / settings.maxPerTeam));
-    const base   = Math.floor(n / numTeams);
-    const extras = n % numTeams;
-    const out = [];
-    let cursor = 0;
-    for (let i = 0; i < numTeams; i++) {
-      const size = base + (i < extras ? 1 : 0);
-      out.push(pool.slice(cursor, cursor + size));
-      cursor += size;
+    const teams = Array.from({ length: numTeams }, () => []);
+
+    const byLevel = { A: [], B: [], C: [] };
+    for (const p of pool) (byLevel[p.level] || byLevel.B).push(p);
+    for (const lvl of ['A', 'B', 'C']) shuffle(byLevel[lvl]);
+
+    for (const level of ['A', 'B', 'C']) {
+      for (const p of byLevel[level]) {
+        let best = 0;
+        let bestLvl = teams[0].filter(x => x.level === level).length;
+        let bestSize = teams[0].length;
+        for (let i = 1; i < numTeams; i++) {
+          const lc = teams[i].filter(x => x.level === level).length;
+          const sz = teams[i].length;
+          if (lc < bestLvl || (lc === bestLvl && sz < bestSize)) {
+            best = i; bestLvl = lc; bestSize = sz;
+          }
+        }
+        teams[best].push(p);
+      }
     }
-    return out;
+    return teams;
   }
 
   function doStartGame() {
     if (selected.size < 2) return;
-    teams = splitIntoTeams(shuffle([...selected]));
+    const pool = players.filter(p => selected.has(p.name));
+    teams = splitIntoTeams(pool);
     teamsGenerated = true;
     renderTeams(true);
     goTo('teams');
@@ -907,7 +1003,7 @@
 
   function doReshuffle() {
     const all = teams.flat();
-    teams = splitIntoTeams(shuffle(all));
+    teams = splitIntoTeams(all);
     renderTeams(true);
   }
 
@@ -916,6 +1012,16 @@
   }
   function teamLabel(idx) {
     return 'Team ' + String.fromCharCode(65 + idx); // A, B, C, ...
+  }
+
+  function levelBreakdown(list) {
+    const c = { A: 0, B: 0, C: 0 };
+    for (const p of list) c[p.level] = (c[p.level] || 0) + 1;
+    const parts = [];
+    if (c.A) parts.push(c.A + 'A');
+    if (c.B) parts.push(c.B + 'B');
+    if (c.C) parts.push(c.C + 'C');
+    return parts.join(' · ');
   }
 
   function renderTeams(animate) {
@@ -929,14 +1035,15 @@
 
     document.getElementById('teamsGrid').innerHTML = teams.map((list, zi) => {
       const color = teamColor(zi);
+      const bd = levelBreakdown(list);
       return `
       <div id="zone-${zi}" data-zone="${zi}" class="team-zone${animate ? (zi % 2 === 0 ? ' anim-a' : ' anim-b') : ''}" style="--team-color:${color};">
         <div class="team-zone-header">
-          <span class="team-zone-label">${teamLabel(zi)}</span>
+          <span class="team-zone-label">${teamLabel(zi)}${bd ? ` · ${bd}` : ''}</span>
           <span class="team-zone-count">${list.length}</span>
         </div>
         <ul id="list-${zi}" class="team-zone-list">
-          ${list.map((n, i) => playerItem(n, i, zi)).join('')}
+          ${list.map((p, i) => playerItem(p, i, zi)).join('')}
         </ul>
       </div>`;
     }).join('');
@@ -944,9 +1051,9 @@
     bindDragListeners();
   }
 
-  function playerItem(name, i, teamIdx) {
+  function playerItem(p, i, teamIdx) {
     return `
-      <li class="player-item" data-name="${esc(name)}" data-team="${teamIdx}" draggable="true" style="--team-color:${teamColor(teamIdx)};">
+      <li class="player-item" data-name="${esc(p.name)}" data-team="${teamIdx}" draggable="true" style="--team-color:${teamColor(teamIdx)};">
         <div class="pi-accent"></div>
         <span class="pi-handle">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -956,7 +1063,8 @@
           </svg>
         </span>
         <span class="pi-num">${i + 1}</span>
-        <span class="pi-name">${esc(name)}</span>
+        <span class="pi-name">${esc(p.name)}</span>
+        <span class="lv-badge lv-${p.level}">${p.level}</span>
       </li>
     `;
   }
@@ -1061,8 +1169,10 @@
   function movePlayer(name, fromTeam, toTeam) {
     const fi = +fromTeam, ti = +toTeam;
     if (!teams[fi] || !teams[ti] || fi === ti) return;
-    teams[fi] = teams[fi].filter(n => n !== name);
-    teams[ti].push(name);
+    const idx = teams[fi].findIndex(p => p.name === name);
+    if (idx < 0) return;
+    const [moved] = teams[fi].splice(idx, 1);
+    teams[ti].push(moved);
     renderTeams(false);
   }
   function clearHighlights() {
