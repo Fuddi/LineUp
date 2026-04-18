@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#0d0f14"/>
+
+  <!-- Outer compass ring -->
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#00e5ff" stroke-width="18"/>
+
+  <!-- Subtle inner glow ring -->
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#00e5ff" stroke-width="3" opacity="0.25"/>
+
+  <!-- Compass rose — 4 diamond points (N, S, E, W) meeting at centre -->
+  <!-- North -->
+  <path d="M256 88 L232 172 L256 256 L280 172 Z" fill="#00e5ff"/>
+  <!-- South -->
+  <path d="M256 424 L232 340 L256 256 L280 340 Z" fill="#00e5ff" opacity="0.85"/>
+  <!-- East -->
+  <path d="M424 256 L340 232 L256 256 L340 280 Z" fill="#00e5ff" opacity="0.85"/>
+  <!-- West -->
+  <path d="M88 256 L172 232 L256 256 L172 280 Z" fill="#00e5ff" opacity="0.85"/>
+
+  <!-- Center pivot dot -->
+  <circle cx="256" cy="256" r="10" fill="#0d0f14"/>
+</svg>
