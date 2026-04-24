@@ -723,6 +723,15 @@
 
       <div class="settings-divider"></div>
 
+      <div>
+        <button id="btn-reload-roster" class="btn-secondary" style="width:100%; height:44px; font-size:13px;">
+          Reload Default Roster
+        </button>
+        <div class="setting-sub" style="margin-top:6px; text-align:center;">Restores the Lyngby HK U11 squad</div>
+      </div>
+
+      <div class="settings-divider"></div>
+
       <button id="btn-reset-session" class="btn-danger-full">
         Clear All &amp; Reset
       </button>
@@ -1283,6 +1292,21 @@
       } else {
         document.exitFullscreen().catch(() => {});
       }
+      close();
+    });
+
+    // Reload Default Roster
+    document.getElementById('btn-reload-roster').addEventListener('click', () => {
+      if (!confirm('Reload the default Lyngby HK U11 squad? This will replace your current roster.')) return;
+      const { list } = migratePlayers(DEFAULT_PLAYERS.slice());
+      players = list;
+      selected.clear();
+      teams = [];
+      teamsGenerated = false;
+      save();
+      renderRoster();
+      renderSelect();
+      goTo('select');
       close();
     });
 
