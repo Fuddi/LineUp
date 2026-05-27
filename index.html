@@ -751,23 +751,47 @@
 
   // ─────────── Default squad (Lyngby HK U11 drenge) ───────────
   const DEFAULT_PLAYERS = [
-    "Adian Kamenica","Aksel Strange","Alvin Breau","Anker Glahn",
-    "Arn Grønbjerg Vej-Hansen","Aske Lysbjerg Havndrup","Benjamin Niclasen",
-    "Bertram Boysen","Buster Brammer Boldt","Carl Krogh Samsøe",
-    "Conrad Juul Coffari","Daniel Nazari","Demir Yigit","Edward Nielsen",
-    "Ernst Munch-Petersen","Frederik Stegenborg","James Petersson",
-    "Joachim Thinggaard","Kristian Pihl","Lucas Dønkjær",
-    "Malthe Kruse Christiansen","Marcus Wiingaard Alstrup",
-    "Marius Engly Anthonsen","Markus Torres Thani","Mathias Petersen",
-    "Mihajlo Kruse Dimitrijevic","Nikolaj Lynge","Oscar Lund Costa",
-    "Oscar Madsen Bjerre","Oscar Niemann","Storm Lui Dyg Staunæs",
-    "Theo Friis Bach","Tobias Balslev Hansen","Victor Hørsted",
-    "Viktor Bjørk Thorgrimsen","Walther Hodal","Witek Wojcik"
+    { name: "Adian Kamenica", level: "A" },
+    { name: "Alvin Breau", level: "B" },
+    { name: "Anker Glahn", level: "C" },
+    { name: "Aron Bork Jensen", level: "C" },
+    { name: "Benjamin Niclasen", level: "A" },
+    { name: "Buster Brammer Boldt", level: "C" },
+    { name: "Carl Sander", level: "B" },
+    { name: "Christian Deigaard", level: "C" },
+    { name: "Conrad Juul Coffari", level: "C" },
+    { name: "Demir Yigit", level: "C" },
+    { name: "Eskil Freyr Holler", level: "C" },
+    { name: "Frederik Stegenborg", level: "C" },
+    { name: "Frederik Thusgaard", level: "B" },
+    { name: "Isak Rodtwitt Knudsen", level: "B" },
+    { name: "Jakob Gjedde", level: "C" },
+    { name: "James Petersson", level: "B" },
+    { name: "Johannes Sorthe-Olsen", level: "B" },
+    { name: "Kristian Pihl", level: "A" },
+    { name: "Louis Serena", level: "C" },
+    { name: "Lucas Dønkjær", level: "B" },
+    { name: "Marcus Wiingaard Alstrup", level: "B" },
+    { name: "Marius Engly Anthonsen", level: "A" },
+    { name: "Markus Torres Thani", level: "B" },
+    { name: "Max Spedtsberg Jensen", level: "C" },
+    { name: "Mihajlo Kruse Dimitrijevic", level: "A" },
+    { name: "Oscar Lindgren Rindum", level: "B" },
+    { name: "Oscar Madsen Bjerre", level: "B" },
+    { name: "Oscar Niemann", level: "A" },
+    { name: "Roger Enric Könner Perez", level: "C" },
+    { name: "Sam Hashemi Tabatabaei", level: "C" },
+    { name: "Storm Lui Dyg Staunæs", level: "B" },
+    { name: "Theo Friis Bach", level: "B" },
+    { name: "Thomas Kresten Andersen", level: "B" },
+    { name: "Tobias Balslev Hansen", level: "A" },
+    { name: "Victor Hørsted", level: "C" },
+    { name: "Witek Wojcik", level: "A" }
   ];
 
   // ─────────── Settings state ───────────
-  const MAX_PER_TEAM_MIN = 2;
-  const MAX_PER_TEAM_MAX = 15;
+  const MAX_PER_TEAM_MIN = 5;
+  const MAX_PER_TEAM_MAX = 9;
   let settings = { darkMode: true, maxPerTeam: 6 };
 
   function loadSettings() {
