@@ -1231,6 +1231,7 @@
     if (idx < 0) return;
     const [moved] = teams[fi].splice(idx, 1);
     teams[ti].push(moved);
+    if (teams[fi].length === 0) teams.splice(fi, 1);
     renderTeams(false);
   }
   function clearHighlights() {
